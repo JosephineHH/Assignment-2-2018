@@ -1,0 +1,171 @@
+---
+title: "Computational Modeling - Week 5 - Assignment 2 - Part 2"
+author: "Riccardo Fusaroli"
+date: "2/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rethinking)
+library(ggplot2)
+```
+
+## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci.
+
+### Second part: Focusing on predictions
+
+Last year you assessed the teachers (darned time runs quick!). Now you want to re-test them and assess whether your models are producing reliable predictions. In Methods 3 we learned how to do machine-learning style assessment of predictions (e.g. rmse on testing datasets). Bayesian stats makes things a bit more complicated. So we'll try out how that works. N.B. You can choose which prior to use for the analysis of last year's data.
+
+Questions to be answered (but see guidance below):
+1- Write a paragraph discussing how assessment of prediction performance is different in Bayesian vs. frequentist models
+2- Provide at least one plot and one written line discussing prediction errors for each of the teachers.
+
+This is the old data:
+- Riccardo: 3 correct answers out of 6 questions
+- Kristian: 2 correct answers out of 2 questions (then he gets bored)
+- Josh: 160 correct answers out of 198 questions (Josh never gets bored)
+- Mikkel: 66 correct answers out of 132 questions
+
+This is the new data:
+- Riccardo: 9 correct answers out of 10 questions (then he freaks out about teaching preparation and leaves)
+- Kristian: 8 correct answers out of 12 questions
+- Josh: 148 correct answers out of 172 questions (again, Josh never gets bored)
+- Mikkel: 34 correct answers out of 65 questions
+
+Guidance Tips
+
+1. There are at least two ways of assessing predictions.
+2. Last year's results are this year's expectations. (last years posterior, is this years prior)
+3. Are the parameter estimates changing? (way 1)
+4. How does the new data look in last year's predictive posterior? (way 2)
+
+
+```{r}
+#Make the grid approximation
+dens = 20
+p_grid = seq(from = 0, to = 1, length.out = dens)
+prior = dnorm(p_grid, mean = 0.8, sd = 0.2) #Now we need to implement a new prior
+likelihood = dbinom(3, size = 6, prob = p_grid)
+unstd.posterior = likelihood*prior
+posterior = unstd.posterior/sum(unstd.posterior)
+newPrior = posterior
+
+#New data
+likelihood = dbinom(9, size = 10, prob = p_grid)
+unstd.posterior = likelihood*newPrior
+posterior = unstd.posterior/sum(unstd.posterior)
+
+#plots
+RF2_data = data.frame(grid = p_grid, posterior = posterior, prior = newPrior, likelihood = likelihood)
+
+#Plot of Riccardos CogSci Knowledge
+RF = ggplot(RF2_data, aes(grid, posterior))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid, prior), color = 'red')+
+  xlab("Knowledge of CogSci")+
+  ylab("Posterior probability")+
+  ggtitle("Riccardo")+
+  ylim(0,1)
+
+
+#---------------------------------------------#
+#Kristian
+#Make the grid approximation
+likelihood = dbinom(2, size = 2, prob = p_grid)
+unstd.posterior = likelihood*prior
+KT_posterior2 = unstd.posterior/sum(unstd.posterior)
+
+KTprior = KT_posterior2
+likelihood = dbinom(8, size = 12, prob = p_grid)
+unstd.posterior = likelihood*KTprior
+KT_posterior = unstd.posterior/sum(unstd.posterior)
+
+
+KT = data.frame(grid = p_grid, posterior = KT_posterior, prior = KTprior, likelihood = likelihood)
+
+#Plot of KTs CogSci Knowledge
+KT = ggplot(KT, aes(grid, KT_posterior))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid, prior), color = 'red')+
+  xlab("Knowledge of CogSci")+
+  ylab("Posterior probability")+
+  ggtitle("Kristian")+
+  ylim(0,1)
+
+
+#---------------------------------------------#
+#JOSH <3  (we miss Josh)
+#Make the grid approximation
+likelihood = dbinom(160, size = 198, prob = p_grid)
+unstd.posterior = likelihood*prior
+JOSH_posterior2 = unstd.posterior/sum(unstd.posterior)
+
+JOSH_prior = JOSH_posterior2
+
+likelihood = dbinom(148, size = 172, prob = p_grid)
+unstd.posterior = likelihood*JOSH_prior
+JOSH_posterior = unstd.posterior/sum(unstd.posterior)
+
+JOSH_data = data.frame(grid = p_grid, posterior = JOSH_posterior, prior = JOSH_prior, likelihood = likelihood)
+
+#Plot of Joshs CogSci Knowledge
+Josh = ggplot(JOSH_data, aes(grid, JOSH_posterior))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid, prior), color = 'red')+
+  xlab("Knowledge of CogSci")+
+  ylab("Posterior probability")+
+  ggtitle("Josh")+
+  ylim(0,1)
+
+#---------------------------------------------#
+#MW
+#Make the grid approximation
+likelihood = dbinom(66, size = 132, prob = p_grid)
+unstd.posterior = likelihood*prior
+MW_posterior2 = unstd.posterior/sum(unstd.posterior)
+MWPrior = MW_posterior2
+
+likelihood = dbinom(34, size = 65, prob = p_grid)
+unstd.posterior = likelihood*MWPrior
+MW_posterior = unstd.posterior/sum(unstd.posterior)
+
+
+MW_data = data.frame(grid = p_grid, posterior = MW_posterior, prior = MWPrior, likelihood = likelihood)
+
+#Plot of MWs CogSci Knowledge
+MW = ggplot(MW_data, aes(grid, MW_posterior))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid, prior), color = 'red')+
+  xlab("Knowledge of CogSci")+
+  ylab("Posterior probability")+
+  ggtitle("Mikkel")+
+  ylim(0,1)
+
+#Arrange the plots together
+gridExtra::grid.arrange(RF, KT, Josh, MW)
+
+
+```
+
+
+### Depending on time: Questions from the handbook
+2H1. Suppose there are two species of panda bear. Both are equally common in the wild and live in the same places. They look exactly alike and eat the same food, and there is yet no genetic assay capable of telling them apart. They differ however in their family sizes. Species A gives birth to twins 10% of the time, otherwise birthing a single infant. Species B births twins 20% of the time, otherwise birthing singleton infants. Assume these numbers are known with certainty, from many years of field research.
+Now suppose you are managing a captive panda breeding program. You have a new female panda of unknown species, and she has just given birth to twins. What is the probability that her next birth will also be twins?
+
+2H2. Recall all the facts from the problem above. Now compute the probability that the panda we have is from species A, assuming we have observed only the first birth and that it was twins.
+
+2H3. Continuing on from the previous problem, suppose the same panda mother has a second birth and that it is not twins, but a singleton infant. Compute the posterior probability that this panda is species A.
+
+2H4. A common boast of Bayesian statisticians is that Bayesian inference makes it easy to use all of the data, even if the data are of different types. So suppose now that a veterinarian comes along who has a new genetic test that she claims can identify the species of our mother panda. But the test, like all tests, is imperfect. This is the information you have about the test:
+- The probability it correctly identifies a species A panda is 0.8.
+- The probability it correctly identifies a species B panda is 0.65.
+The vet administers the test to your panda and tells you that the test is positive for species A. First ignore your previous information from the births and compute the posterior probability that your panda is species A. Then redo your calculation, now using the birth data as well.
