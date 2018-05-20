@@ -43,7 +43,7 @@ Guidance Tips
 
 ```{r}
 #Make the grid approximation
-dens = 20
+dens = 25
 p_grid = seq(from = 0, to = 1, length.out = dens)
 prior = dnorm(p_grid, mean = 0.8, sd = 0.2) #Now we need to implement a new prior
 likelihood = dbinom(3, size = 6, prob = p_grid)
@@ -69,6 +69,15 @@ RF = ggplot(RF2_data, aes(grid, posterior))+
   ylab("Posterior probability")+
   ggtitle("Riccardo")+
   ylim(0,1)
+
+RF5.qa = map(
+  alist(
+    c ~ dbinom(10,p),
+    p ~ posterior 
+  ),
+  data = list(c = 9))
+
+precis(RF5.qa)
 
 
 #---------------------------------------------#
